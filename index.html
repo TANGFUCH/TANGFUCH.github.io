@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 关键：强制手机屏幕自适应 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>手机温馨提示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            background: #f5f5f5; /* 背景色，让窗口更明显 */
+        }
+
+        /* 提示窗口：用百分比适配手机屏幕 */
+        .tip-window {
+            position: absolute;
+            width: 70%; /* 宽度占屏幕70% */
+            max-width: 300px; /* 最大不超过300px（适配大屏手机） */
+            height: 12%; /* 高度占屏幕12% */
+            border-radius: 12px; /* 圆角更大，适合手机 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* 阴影更深，突出窗口 */
+            z-index: 1000;
+            font-family: "微软雅黑", sans-serif;
+            font-size: 5vw; /* 字体大小随屏幕宽度变化（vw是屏幕宽度的百分比） */
+            transition: all 0.3s ease;
+            padding: 0 5%;
+        }
+
+        /* 分享按钮：固定在底部 */
+        #shareBtn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 2000; /* 在窗口上方 */
+            display: block;
+        }
+
+        /* 适配横屏（可选） */
+        @media (orientation: landscape) {
+            .tip-window {
+                height: 25%; /* 横屏时高度占比更大 */
+                font-size: 3vh; /* 用高度百分比控制字体 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 分享按钮 -->
+    <button id="shareBtn">分享到手机</button>
+
+    <script>
+        const tips = [
+            '多喝水哦~', '保持微笑呀', '每天都要元气满满',
+            '记得吃水果', '保持好心情', '好好爱自己', '我想你了',
+            '梦想成真', '期待下一次见面', '金榜题名',
+            '顺顺利利', '早点休息', '愿所有烦恼都消失',
+            '别熬夜', '今天过得开心嘛', '天冷了，多穿衣服'
+        ];
+
+        const bgColors = [
+            'rgb(255, 182, 193)', // lightpink
+            'rgb(135, 206, 235)', // skyblue
+            'rgb(144, 238, 144)', // lightgreen
+            'rgb(230, 230, 250)', // lavender
+            'rgb(255, 255, 224)', // lightyellow
+            'rgb(221, 160, 221)', // plum
+            'rgb(255, 127, 80)'   // coral
+        ];
+
+        // 手机端配置（窗口数量减少，避免卡顿）
+        const config = {
+            totalCount: 20,       // 窗口总数（手机性能有限，20个足够）
+            totalPopTime: 20,     // 20秒内弹完
+            closeDelay: 15        // 弹完后15秒关闭
+        };
+
+        const windows = [];
+        const interval = (config.totalPopTime * 1000) / config.totalCount;
+
+        // 创建适配手机的窗口
+        function createTipWindow() {
+            const windowElem = document.createElement('div');
+            windowElem.className = 'tip-window';
+
+            // 随机内容
+            const tip = tips[Math.floor(Math.random() * tips.length)];
+            const bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+            windowElem.textContent = tip;
+            windowElem.style.backgroundColor = bgColor;
+
+            // 计算手机屏幕内的随机位置
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const windowWidth = windowElem.offsetWidth; // 用实际宽度计算
+            const windowHeight = windowElem.offsetHeight;
+
+            // 确保窗口在屏幕内（左右留边距，上下避开底部按钮）
+            const maxX = screenWidth - windowWidth;
+            const maxY = screenHeight - windowHeight - 60; // 减去底部按钮高度
+            const x = Math.max(0, Math.floor(Math.random() * maxX));
+            const y = Math.max(0, Math.floor(Math.random() * maxY));
+
+            windowElem.style.left = `${x}px`;
+            windowElem.style.top = `${y}px`;
+
+            document.body.appendChild(windowElem);
+            windows.push(windowElem);
+        }
+
+        // 批量创建窗口
+        let currentIndex = 0;
+        const createTimer = setInterval(() => {
+            if (currentIndex < config.totalCount) {
+                createTipWindow();
+                currentIndex++;
+            } else {
+                clearInterval(createTimer);
+                document.getElementById('shareBtn').style.display = 'none'; // 隐藏分享按钮
+                setTimeout(closeAllWindows, config.closeDelay * 1000);
+            }
+        }, interval);
+
+        // 关闭所有窗口
+        function closeAllWindows() {
+            windows.forEach(windowElem => {
+                windowElem.style.opacity = '0';
+                windowElem.style.transform = 'scale(0.8)';
+                setTimeout(() => windowElem.remove(), 300);
+            });
+        }
+
+        // 分享功能（利用浏览器自带分享）
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            if (navigator.share) {
+                // 浏览器支持分享API（手机Chrome/Safari等）
+                navigator.share({
+                    title: '温馨提示',
+                    text: '给你发了一些温馨提示~',
+                    url: window.location.href // 当前页面链接（如果部署到网上才能分享）
+                }).catch(err => {
+                    alert('分享失败：' + err);
+                });
+            } else {
+                // 不支持分享API时，提示复制链接
+                prompt('复制链接到手机浏览器打开：', window.location.href);
+            }
+        });
+    </script>
+</body>
+</html>
