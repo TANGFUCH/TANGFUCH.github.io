@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>汤英俊的温馨提示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        /* 手机适配的提示窗口 */
+        .tip-window {
+            position: absolute;
+            width: 70%;
+            max-width: 300px;
+            padding: 15px 0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 1000;
+            font-family: "微软雅黑", sans-serif;
+            font-size: 5vw;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        /* 横屏适配 */
+        @media (orientation: landscape) {
+            .tip-window {
+                font-size: 3vh;
+                padding: 10px 0;
+            }
+        }
+
+        /* 3D粒子容器（固定在屏幕中央，层级低于提示窗） */
+        #particle-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 900;
+            pointer-events: none; /* 不遮挡提示窗点击 */
+        }
+
+        /* 烟花粒子样式 */
+        .firework-particle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 1;
+            transition: all 0.8s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 新增：粒子容器，用于承载爱心和烟花 -->
+    <div id="particle-container"></div>
+
+    <script>
+        const tips = [
+            '多喝水哦~', '保持微笑呀', '元气满满',
+            '记得吃水果', '保持好心情', '好好爱自己', '我想你了', '董天碧小憨包', '我的小憨包',
+            '记得想我哦～', '期待下我们每一次见面', '爱你呦小妹妹', '小董小董', '我滴暖宝宝',
+            '我滴小bb啊', '要多多沟通哦', '让所有烦恼都滚滚滚', '好好吃饭哦',  '爱你呦', '多想我知道没',
+            '别熬夜', '天天开心', '天冷了，多穿衣服'
+        ];
+
+        const bgColors = [
+            'rgb(255, 182, 193)', 'rgb(135, 206, 235)', 'rgb(144, 238, 144)',
+            'rgb(230, 230, 250)', 'rgb(255, 255, 224)', 'rgb(221, 160, 221)', 'rgb(255, 127, 80)'
+        ];
+
+        const config = {
+            totalCount: 100,
+            totalPopTime: 20,
+            closeDelay: 5
+        };
+
+        const windows = [];
+        const interval = (config.totalPopTime * 1000) / config.totalCount;
+        const particleContainer = document.getElementById('particle-container');
+        let loveParticles = []; // 存储爱心粒子
+        const LOVE_PARTICLE_NUM = 150; // 爱心粒子数量
+        const FIREWORK_PARTICLE_NUM = 200; // 烟花粒子数量
+
+        // ———— 原有功能：提示窗创建 ————
+        function createTipWindow() {
+            const windowElem = document.createElement('div');
+            windowElem.className = 'tip-window';
+            const tip = tips[Math.floor(Math.random() * tips.length)];
+            const bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+            windowElem.textContent = tip;
+            windowElem.style.backgroundColor = bgColor;
+
+            document.body.appendChild(windowElem);
+            const windowWidth = windowElem.offsetWidth;
+            const windowHeight = windowElem.offsetHeight;
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            const maxX = screenWidth - windowWidth - 20;
+            const maxY = screenHeight - windowHeight - 40;
+            const x = 10 + Math.floor(Math.random() * maxX);
+            const y = 20 + Math.floor(Math.random() * maxY);
+
+            windowElem.style.left = `${x}px`;
+            windowElem.style.top = `${y}px`;
+            windows.push(windowElem);
+        }
+
+        // ———— 新增功能1：创建3D爱心粒子（基于爱心数学公式） ————
+        function createLoveParticles() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2 - 50; // 爱心位置上移，避免遮挡
+
+            for (let i = 0; i < LOVE_PARTICLE_NUM; i++) {
+                // 爱心数学公式：(x²+y²-1)³ - x²y³ = 0（调整参数实现3D感）
+                const t = Math.random() * Math.PI * 2;
+                const r = Math.random() * 0.8 + 0.2;
+                const x = r * 16 * Math.pow(Math.sin(t), 3);
+                const y = -r * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+
+                // 3D效果：添加随机z轴偏移，控制大小和透明度
+                const z = Math.random() * 50 - 25;
+                const size = 3 + (z / 10); // z轴越近，粒子越大
+                const opacity = 0.7 + (z / 100); // z轴越近，透明度越高
+
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = `rgb(255, ${100 + Math.random() * 55}, ${100 + Math.random() * 55})`; // 粉色系
+                particle.style.borderRadius = '50%';
+                particle.style.left = `${centerX + x * 8}px`; // 缩放爱心尺寸
+                particle.style.top = `${centerY + y * 8}px`;
+                particle.style.opacity = opacity;
+                particle.style.transform = `translateZ(${z}px)`; // 3D偏移
+                particleContainer.appendChild(particle);
+
+                loveParticles.push({
+                    elem: particle,
+                    originX: centerX + x * 8,
+                    originY: centerY + y * 8,
+                    z: z
+                });
+            }
+        }
+
+        // ———— 新增功能2：爱心融化效果（5秒后执行） ————
+        function meltLoveParticles() {
+            setTimeout(() => {
+                loveParticles.forEach(particle => {
+                    // 融化逻辑：粒子向随机方向扩散，逐渐透明
+                    const randomX = particle.originX + (Math.random() - 0.5) * 150;
+                    const randomY = particle.originY + (Math.random() - 0.5) * 150;
+                    particle.elem.style.transition = 'all 2s ease-out';
+                    particle.elem.style.left = `${randomX}px`;
+                    particle.elem.style.top = `${randomY}px`;
+                    particle.elem.style.opacity = '0';
+                    particle.elem.style.transform = `scale(0.5) translateZ(${particle.z}px)`;
+                });
+
+                // 融化结束后，延迟1秒触发烟花
+                setTimeout(launchFireworks, 1000);
+            }, 5000); // 5秒后开始融化
+        }
+
+        // ———— 新增功能3：底部发射烟花 ————
+        function launchFireworks() {
+            const screenWidth = window.innerWidth;
+            const baseY = window.innerHeight - 20; // 烟花发射起点（屏幕底部）
+
+            for (let i = 0; i < FIREWORK_PARTICLE_NUM; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'firework-particle';
+                
+                // 随机烟花颜色（彩虹色）
+                const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                particle.style.backgroundColor = color;
+                particle.style.boxShadow = `0 0 8px ${color}`; // 粒子发光效果
+
+                // 发射起点：底部随机x坐标
+                const startX = Math.random() * screenWidth;
+                particle.style.left = `${startX}px`;
+                particle.style.top = `${baseY}px`;
+
+                // 随机发射角度和距离（向上扩散）
+                const angle = Math.random() * Math.PI / 2 - Math.PI / 4; // -45° ~ 45°
+                const distance = 80 + Math.random() * 150; // 粒子飞行距离
+                const endX = startX + Math.cos(angle) * distance;
+                const endY = baseY - Math.sin(angle) * distance; // 向上飞行
+
+                // 随机粒子大小
+                const size = 2 + Math.random() * 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                particleContainer.appendChild(particle);
+
+                // 触发烟花动画：先向上飞，再淡出消失
+                setTimeout(() => {
+                    particle.style.left = `${endX}px`;
+                    particle.style.top = `${endY}px`;
+                    particle.style.opacity = '0';
+                    particle.style.transform = 'scale(0.3)';
+                    
+                    // 动画结束后移除粒子
+                    setTimeout(() => particle.remove(), 800);
+                }, 10);
+            }
+        }
+
+        // ———— 原有功能：提示窗批量创建与关闭 ————
+        let currentIndex = 0;
+        const createTimer = setInterval(() => {
+            if (currentIndex < config.totalCount) {
+                createTipWindow();
+                currentIndex++;
+            } else {
+                clearInterval(createTimer);
+                setTimeout(closeAllWindows, config.closeDelay * 1000);
+            }
+        }, interval);
+
+        function closeAllWindows() {
+            windows.forEach(windowElem => {
+                windowElem.style.opacity = '0';
+                windowElem.style.transform = 'scale(0.8)';
+                setTimeout(() => windowElem.remove(), 300);
+            });
+        }
+
+        // ———— 初始化：页面加载后创建爱心粒子，并启动融化倒计时 ————
+        window.onload = () => {
+            createLoveParticles();
+            meltLoveParticles();
+        };
+    </script>
+</body>
+</html>
